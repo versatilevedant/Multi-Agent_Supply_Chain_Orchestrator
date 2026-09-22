@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RaktaSetu v2 - Emergency Operations Center</title>
+    <meta name="description" content="RaktaSetu v2 Emergency Operations Center - Real-time blood bank routing and emergency dispatch system powered by advanced AI algorithms.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <style>
+        /* ── Route Control Panel (Floating Left-Bottom) ── */
+        .route-control-panel {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            z-index: 15;
+            width: 340px;
+            border-radius: 12px;
+            padding: 1.25rem;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1), 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        .route-control-panel h3 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #94a3b8;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .route-control-panel h3::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #3b82f6;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+        }
+        .route-controls-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .route-controls-grid label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            margin-bottom: 2px;
+        }
+        .route-controls-grid select {
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #e2e8f0;
+            padding: 0.6rem 0.75rem;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            width: 100%;
+            cursor: pointer;
+        }
+        .route-controls-grid select:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        .algo-selector {
+            display: flex;
+            gap: 6px;
+            margin-top: 4px;
+        }
+        .algo-btn {
+            flex: 1;
+            padding: 8px 4px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #94a3b8;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-align: center;
+            transition: all 0.2s;
+            letter-spacing: 0.3px;
+        }
+        .algo-btn:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.3);
+            color: #e2e8f0;
+        }
+        .algo-btn.active {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: #3b82f6;
+            color: #60a5fa;
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.15);
+        }
+        .btn-calculate {
+            margin-top: 6px;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-size: 0.75rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-calculate:hover {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.35), rgba(139, 92, 246, 0.35));
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+            transform: translateY(-1px);
+        }
+        .btn-calculate:active {
+            transform: translateY(0);
+        }
+        .btn-calculate.loading {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+        .btn-calculate.loading::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.15), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            100% { left: 100%; }
+        }
+        .route-result-badge {
+            margin-top: 8px;
+            padding: 8px 10px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: #34d399;
+            display: none;
+            line-height: 1.5;
+        }
+        .route-result-badge.visible {
+            display: block;
+            animation: fadeSlideIn 0.3s ease-out;
+        }
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Animated route lines */
+        .animated-route {
+            stroke-dasharray: 12, 8;
+            animation: dashFlow 1s linear infinite;
+        }
+        @keyframes dashFlow {
+            to { stroke-dashoffset: -20; }
+        }
+
+        /* Fix Leaflet z-index stacking */
+        .leaflet-pane { z-index: 1 !important; }
+        .leaflet-top, .leaflet-bottom { z-index: 2 !important; }
+
+        /* ── 3D Ambulance Marker System ── */
+        .ambulance-3d-marker {
+            background: none !important;
+            border: none !important;
+            pointer-events: none;
+        }
+
+        .ambulance-3d-container {
+            width: 56px;
+            height: 56px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            will-change: transform;
+            transition: none; /* Rotation handled manually via JS for smooth interpolation */
+        }
+
+        .ambulance-3d-img {
+            width: 48px;
+            height: 48px;
+            position: relative;
+            z-index: 3;
+            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
+            overflow: visible;
+        }
+
+        .ambulance-3d-shadow {
+            position: absolute;
+            bottom: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 12px;
+            background: radial-gradient(ellipse, rgba(0, 0, 0, 0.35) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .ambulance-3d-lights {
+            position: absolute;
+            top: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 4px;
+            border-radius: 2px;
+            z-index: 4;
+            animation: emergencyLights 0.6s ease-in-out infinite alternate;
+        }
+
+        @keyframes emergencyLights {
+            0%   { background: #ef4444; box-shadow: 0 0 8px 2px rgba(239, 68, 68, 0.8); }
+            100% { background: #3b82f6; box-shadow: 0 0 8px 2px rgba(59, 130, 246, 0.8); }
+        }
+
+        /* Ambulance tooltip styling */
+        .ambulance-tooltip {
+            background: rgba(15, 23, 42, 0.9) !important;
+            color: #f1f5f9 !important;
+            border: 1px solid rgba(239, 68, 68, 0.4) !important;
+            border-radius: 6px !important;
+            font-family: 'Inter', sans-serif !important;
+            font-size: 0.7rem !important;
+            font-weight: 600 !important;
+            letter-spacing: 0.5px !important;
+            padding: 4px 10px !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+        }
+
+        .ambulance-tooltip::before {
+            border-top-color: rgba(15, 23, 42, 0.9) !important;
+        }
+    </style>
+</head>
+<body class="eoc-theme">
+    <div class="eoc-layout">
+        <!-- Sidebar -->
+        <aside class="eoc-sidebar glass-panel">
+            <button id="sidebar-toggle" class="sidebar-toggle-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <header class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon pulse-red"></span>
+                    <h1>RaktaSetu <span class="version">v2</span></h1>
+                </div>
+                <div class="badge">EOC Active</div>
+            </header>
+            <button type="button" id="open-db-modal" style="background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.3); color:#60a5fa; font-size:0.75rem; font-weight:600; padding:6px 10px; border-radius:6px; cursor:pointer; margin: 0 1.25rem 1rem 1.25rem; display:flex; align-items:center; justify-content:center; gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                View Hospitals & Blood Banks Database
+            </button>
+
+            <!-- Emergency Request Form -->
+            <section class="control-panel">
+                <h2>Emergency Request & Route Optimizer</h2>
+                <form id="emergency-form" class="eoc-form">
+                    <div class="form-group">
+                        <label for="req-hospital">Destination Hospital</label>
+                        <select id="req-hospital" class="form-control">
+                            <!-- Populated dynamically from API -->
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="req-blood-type">Blood Type</label>
+                            <select id="req-blood-type" class="form-control">
+                                <option>A+</option><option>A-</option>
+                                <option>B+</option><option>B-</option>
+                                <option>AB+</option><option>AB-</option>
+                                <option selected>O+</option><option>O-</option>
+                            </select>
+                        </div>
+                        <div class="form-group half">
+                            <label for="req-units">Units Required</label>
+                            <input type="number" id="req-units" min="1" max="10" value="2" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="req-condition">Emergency Severity</label>
+                        <select id="req-condition" class="severity-select form-control">
+                            <option value="critical" class="text-crimson">Critical (Immediate Dispatch)</option>
+                            <option value="high" class="text-amber">High (Within 2 hrs)</option>
+                            <option value="routine" class="text-emerald">Routine Supply</option>
+                        </select>
+                    </div>
+                    <!-- SINGLE UNIFIED BUTTON -->
+                    <button type="submit" id="btn-auto-dispatch" class="btn btn-primary glow-red" style="width:100%; margin-top:1rem; padding: 0.85rem; font-weight: 700; letter-spacing: 1px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.8rem;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        AUTO-CALCULATE & DISPATCH OPTIMAL ROUTE
+                    </button>
+                </form>
+            </section>
+
+            <!-- Live KPIs -->
+            <section class="kpi-panel">
+                <h2>Live System Status</h2>
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <span class="kpi-label">Active Emergencies</span>
+                        <span class="kpi-value text-crimson pulse-red" id="kpi-active-emergencies">0</span>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">Avg ETA</span>
+                        <span class="kpi-value text-amber" id="kpi-avg-eta">12m</span>
+                    </div>
+                    <div class="kpi-card full-width">
+                        <span class="kpi-label">Global Supply Health</span>
+                        <div class="progress-bar">
+                            <div class="progress fill-emerald" id="kpi-supply-bar" style="width: 85%"></div>
+                        </div>
+                        <span class="kpi-subtext" id="kpi-supply-health">85% Optimal</span>
+                    </div>
+                </div>
+            </section>
+        </aside>
+
+        <!-- Main Map Area -->
+        <main class="eoc-main">
+            <div id="map" class="map-container"></div>
+
+            <!-- Route Summary Info Panel (Floating Left-Bottom) -->
+            <div class="route-control-panel" id="route-panel" style="min-width: 320px;">
+                <h3>Active Route Optimization</h3>
+                <div id="route-info-body">
+                    <div style="font-size: 0.8rem; color: #94a3b8; line-height: 1.6;">
+                        Press <b>Auto-Calculate & Dispatch</b> above to compute real road routes & allocate blood inventory automatically.
+                    </div>
+                </div>
+                <button type="button" id="btn-demo-reroute" class="btn btn-secondary glow-amber" style="display:none; width:100%; margin-top:0.75rem; padding: 0.65rem; font-size:0.75rem; font-weight:700; cursor:pointer; background:rgba(245, 158, 11, 0.2); border:1px solid #f59e0b; color:#fbbf24; border-radius:8px;">
+                    SIMULATE MID-TRANSIT INTERCEPTION (CLOSER HOSPITAL)
+                </button>
+                <div class="route-result-badge" id="route-result" style="margin-top: 10px;"></div>
+            </div>
+            
+            <!-- Agent Live Feed (Floating Right) -->
+            <div class="floating-panel live-feed glass-panel">
+                <div class="panel-header">
+                    <h3>Multi-Agent Intelligence Feed</h3>
+                    <span class="status-dot green pulse-green"></span>
+                </div>
+                <div class="feed-list" id="agent-log-feed">
+                    <div class="feed-item highlight">
+                        <span class="time">System</span>
+                        <span class="agent agent-blue">[RaktaSetu AI]</span>
+                        <span class="msg">Autonomous Multi-Agent System operational.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Route Timeline (Floating Bottom) -->
+            <div class="floating-panel route-timeline glass-panel" id="timeline-panel">
+                <div class="timeline-header">
+                    <h3 id="timeline-title">Mission Status: Ready</h3>
+                    <span class="eta" id="timeline-eta">ETA: --</span>
+                </div>
+                <div class="timeline-steps">
+                    <div class="step completed" id="step-received">
+                        <div class="step-icon"></div>
+                        <span class="step-label">Received</span>
+                    </div>
+                    <div class="step pending" id="step-discovered">
+                        <div class="line"></div>
+                        <div class="step-icon"></div>
+                        <span class="step-label">Discovered</span>
+                    </div>
+                    <div class="step pending" id="step-optimized">
+                        <div class="line"></div>
+                        <div class="step-icon"></div>
+                        <span class="step-label">Optimized</span>
+                    </div>
+                    <div class="step pending" id="step-dispatched">
+                        <div class="line"></div>
+                        <div class="step-icon"></div>
+                        <span class="step-label">Dispatched</span>
+                    </div>
+                    <div class="step pending" id="step-arrived">
+                        <div class="line"></div>
+                        <div class="step-icon"></div>
+                        <span class="step-label">Arrived</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Database Viewer Modal -->
+    <div id="db-modal-overlay" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(15,23,42,0.85); backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:1.5rem;">
+        <div style="background:rgba(30,41,59,0.95); border:1px solid rgba(255,255,255,0.1); border-radius:16px; width:95%; max-width:1150px; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.6);">
+            <header style="padding:1.25rem 1.5rem; background:rgba(15,23,42,0.7); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:space-between;">
+                <h2 style="font-size:1.1rem; color:#f8fafc; font-weight:700; margin:0; display:flex; align-items:center; gap:8px;">
+                    RaktaSetu Emergency Operations Database (India)
+                </h2>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <button id="tab-btn-bb" class="algo-btn active" style="padding:6px 14px; font-size:0.75rem;">Blood Banks Inventory</button>
+                    <button id="tab-btn-hosp" class="algo-btn" style="padding:6px 14px; font-size:0.75rem;">Hospitals Directory</button>
+                    <button id="close-db-modal" style="background:none; border:none; color:#94a3b8; font-size:1.6rem; cursor:pointer; line-height:1; margin-left:10px;">&times;</button>
+                </div>
+            </header>
+            <div style="padding:1.25rem 1.5rem; overflow-y:auto; flex:1;" id="db-modal-content">
+                <!-- Tables rendered dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Route Optimizer (Advanced Routing Engine) -->
+    <script src="js/ml/routeOptimizer.js"></script>
+    <!-- Main Application Logic -->
+    <script src="js/app.js"></script>
+</body>
+</html>

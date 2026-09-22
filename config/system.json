@@ -1,0 +1,46 @@
+{
+  "simulation": {
+    "tickInterval": 5000,
+    "inventoryFluctuationInterval": 10000,
+    "trafficUpdateInterval": 8000,
+    "emergencyProbability": 0.3,
+    "maxActiveEmergencies": 5
+  },
+  "routing": {
+    "osrmBaseUrl": "https://router.project-osrm.org/route/v1/driving",
+    "maxColdChainHours": 4,
+    "avgSpeedCityKph": 35,
+    "avgSpeedHighwayKph": 65,
+    "maxRetries": 3
+  },
+  "optimization": {
+    "ahp": {
+      "criteria": ["emergency", "inventory", "travelTime", "reliability", "distance"],
+      "defaultWeights": { "emergency": 0.35, "inventory": 0.25, "travelTime": 0.20, "reliability": 0.10, "distance": 0.10 }
+    },
+    "nsga2": {
+      "populationSize": 20,
+      "generations": 15,
+      "crossoverRate": 0.9,
+      "mutationRate": 0.1
+    },
+    "hungarian": { "enabled": true }
+  },
+  "bloodGroups": ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"],
+  "bloodGroupDistribution": {
+    "O+": 0.326, "O-": 0.024, "B+": 0.234, "B-": 0.016,
+    "A+": 0.222, "A-": 0.018, "AB+": 0.074, "AB-": 0.006
+  },
+  "emergencyModes": {
+    "routine": { "label": "Routine", "color": "#10b981", "weights": { "cost": 0.4, "balance": 0.3, "time": 0.2, "reliability": 0.1 } },
+    "urgent": { "label": "Urgent", "color": "#f59e0b", "weights": { "time": 0.5, "reliability": 0.2, "cost": 0.2, "balance": 0.1 } },
+    "emergency": { "label": "Emergency", "color": "#ef4444", "weights": { "time": 0.7, "reliability": 0.2, "balance": 0.1, "cost": 0.0 } }
+  },
+  "shelfLife": {
+    "Whole Blood": 35,
+    "Packed RBCs": 42,
+    "Platelets": 5,
+    "FFP": 365,
+    "Cryoprecipitate": 365
+  }
+}

@@ -1,0 +1,85 @@
+/* RaktaSetu v2 - Design System */
+:root {
+    /* Core Colors */
+    --color-slate-900: #0f172a;
+    --color-slate-800: #1e293b;
+    --color-slate-700: #334155;
+    --color-slate-300: #cbd5e1;
+    --color-slate-100: #f1f5f9;
+    
+    /* Accents */
+    --color-crimson: #ef4444;
+    --color-crimson-glow: rgba(239, 68, 68, 0.4);
+    --color-emerald: #10b981;
+    --color-emerald-glow: rgba(16, 185, 129, 0.4);
+    --color-amber: #f59e0b;
+    --color-blue: #3b82f6;
+    --color-blue-glow: rgba(59, 130, 246, 0.4);
+
+    /* UI Elements */
+    --glass-bg: rgba(15, 23, 42, 0.45);
+    --glass-border: rgba(255, 255, 255, 0.15);
+    --shadow-floating: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+    
+    /* Typography */
+    --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body.eoc-theme {
+    font-family: var(--font-primary);
+    background-color: var(--color-slate-900);
+    color: var(--color-slate-100);
+    overflow: hidden; /* Full screen EOC */
+    height: 100vh;
+    width: 100vw;
+}
+
+/* Glassmorphism Utilities */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1), var(--shadow-floating);
+}
+
+/* Typography Utilities */
+.text-crimson { color: var(--color-crimson) !important; }
+.text-emerald { color: var(--color-emerald) !important; }
+.text-amber { color: var(--color-amber) !important; }
+.text-blue { color: var(--color-blue) !important; }
+
+/* Animations */
+@keyframes pulseRed {
+    0% { box-shadow: 0 0 0 0 var(--color-crimson-glow); }
+    70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+@keyframes pulseGreen {
+    0% { box-shadow: 0 0 0 0 var(--color-emerald-glow); }
+    70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+@keyframes pulseBlue {
+    0% { box-shadow: 0 0 0 0 var(--color-blue-glow); }
+    70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+
+.pulse-red { animation: pulseRed 2s infinite; }
+.pulse-green { animation: pulseGreen 2s infinite; }
+.pulse-blue { animation: pulseBlue 2s infinite; }
+
+.glow-red {
+    border: 1px solid var(--color-crimson);
+    box-shadow: 0 0 10px var(--color-crimson-glow);
+}
