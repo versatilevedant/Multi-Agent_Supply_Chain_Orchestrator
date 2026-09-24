@@ -80,7 +80,11 @@ setInterval(() => {
 }, 8000);
 
 
-// ── API Endpoints ──
+// ── Routes & Endpoints ──
+
+app.get(['/', '/dashboard'], (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 app.get('/api/stream', (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
@@ -105,6 +109,28 @@ app.get('/api/config', (req, res) => {
 
 app.get('/api/dashboard', (req, res) => {
     res.json(orchestrator.getMetrics());
+});
+
+app.get('/api/research/benchmark', (req, res) => {
+    const resultsDir = path.join(__dirname, 'research', 'results');
+    const readJsonSafe = (file) => {
+        try {
+            return JSON.parse(fs.readFileSync(path.join(resultsDir, file), 'utf8'));
+        } catch (e) {
+            return null;
+        }
+    };
+    res.json({
+        title: "MULTI-AGENT SUPPLY CHAIN ORCHESTRATOR",
+        status: "empirical_evaluation_complete",
+        sections: {
+            section_a_forecasting: readJsonSafe('section_a_forecasting.json'),
+            section_b_supply_chain: readJsonSafe('section_b_supply_chain.json'),
+            section_c_agent_dynamics: readJsonSafe('section_c_agent_dynamics.json'),
+            section_d_end_to_end: readJsonSafe('section_d_end_to_end.json'),
+            live_node_telemetry: readJsonSafe('node_live_benchmark.json')
+        }
+    });
 });
 
 app.post('/api/emergency', async (req, res) => {

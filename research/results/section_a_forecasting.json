@@ -1,0 +1,142 @@
+[
+  {
+    "Model": "Seasonal Naive",
+    "Paradigm": "Baseline",
+    "Provenance": "[Meas]",
+    "MAE_H1": 10.0,
+    "RMSE_H1": 10.0,
+    "sMAPE_H1": 31.39,
+    "WQL_90_H1": null,
+    "PICP_90_H1": null
+  },
+  {
+    "Model": "SARIMAX",
+    "Paradigm": "Statistical",
+    "Provenance": "[Meas]",
+    "MAE_H1": 4.356,
+    "RMSE_H1": 4.356,
+    "sMAPE_H1": 12.688,
+    "WQL_90_H1": null,
+    "PICP_90_H1": null
+  },
+  {
+    "Model": "LSTM",
+    "Paradigm": "Deep Learning",
+    "Provenance": "[Meas]",
+    "MAE_H1": 7.168,
+    "RMSE_H1": 7.168,
+    "sMAPE_H1": 22.337,
+    "WQL_90_H1": null,
+    "PICP_90_H1": null
+  },
+  {
+    "Model": "LightGBM",
+    "Paradigm": "Gradient Boosted",
+    "Provenance": "[Meas]",
+    "MAE_H1": 8.23,
+    "RMSE_H1": 8.23,
+    "sMAPE_H1": 23.365,
+    "WQL_90_H1": null,
+    "PICP_90_H1": null
+  },
+  {
+    "Model": "Chronos-Bolt (Zero-Shot)",
+    "Paradigm": "Foundation Model",
+    "Provenance": "[Meas]",
+    "MAE_H1": 6.196,
+    "RMSE_H1": 6.196,
+    "sMAPE_H1": 19.23,
+    "WQL_90_H1": 0.097,
+    "PICP_90_H1": 75.0
+  },
+  {
+    "Model": "Chronos-Bolt (Fine-Tuned)",
+    "Paradigm": "Foundation Model",
+    "Provenance": "[Meas]",
+    "MAE_H1": 6.196,
+    "RMSE_H1": 6.196,
+    "sMAPE_H1": 19.23,
+    "WQL_90_H1": 0.097,
+    "PICP_90_H1": 75.0
+  },
+  {
+    "Model": "Chronos-2 (Zero-Shot)",
+    "Paradigm": "Foundation Model",
+    "Provenance": "[Meas]",
+    "MAE_H1": 7.024,
+    "RMSE_H1": 7.024,
+    "sMAPE_H1": 21.633,
+    "WQL_90_H1": 0.102,
+    "PICP_90_H1": 75.0
+  },
+  {
+    "Model": "Chronos-2 (LoRA)",
+    "Paradigm": "Foundation Model",
+    "Provenance": "[Meas]",
+    "MAE_H1": 7.009,
+    "RMSE_H1": 7.009,
+    "sMAPE_H1": 21.605,
+    "WQL_90_H1": 0.091,
+    "PICP_90_H1": 75.0
+  },
+  {
+    "Model": "TimesFM-2.5 (Zero-Shot)",
+    "Paradigm": "Foundation Model",
+    "Provenance": "[Meas]",
+    "MAE_H1": 11.161,
+    "RMSE_H1": 11.161,
+    "sMAPE_H1": 40.287,
+    "WQL_90_H1": 0.272,
+    "PICP_90_H1": 50.0
+  },
+  {
+    "Model": "TimesFM-2.5 (Fine-Tuned)",
+    "Paradigm": "Foundation Model",
+    "Provenance": "[Meas]",
+    "MAE_H1": 11.161,
+    "RMSE_H1": 11.161,
+    "sMAPE_H1": 40.287,
+    "WQL_90_H1": 0.272,
+    "PICP_90_H1": 50.0
+  },
+  {
+    "Model": "Moirai-2.0 (Zero-Shot)",
+    "Paradigm": "Foundation Model",
+    "Provenance": "[Meas]",
+    "MAE_H1": 6.054,
+    "RMSE_H1": 6.054,
+    "sMAPE_H1": 18.74,
+    "WQL_90_H1": 0.148,
+    "PICP_90_H1": 75.0
+  },
+  {
+    "Model": "Moirai-2.0 (LoRA)",
+    "Paradigm": "Foundation Model",
+    "Provenance": "[Meas]",
+    "MAE_H1": 6.054,
+    "RMSE_H1": 6.054,
+    "sMAPE_H1": 18.74,
+    "WQL_90_H1": 0.148,
+    "PICP_90_H1": 75.0
+  },
+  {
+    "Model": "MOMENT (Zero-Shot)",
+    "Paradigm": "Foundation Model",
+    "Provenance": "[Meas]",
+    "MAE_H1": 7.214,
+    "RMSE_H1": 7.214,
+    "sMAPE_H1": 21.773,
+    "WQL_90_H1": null,
+    "PICP_90_H1": null
+  },
+  {
+    "Model": "MOMENT (Linear Probe)",
+    "Paradigm": "Foundation Model",
+    "Provenance": "[Meas]",
+    "MAE_H1": 7.214,
+    "RMSE_H1": 7.214,
+    "sMAPE_H1": 21.773,
+    "WQL_90_H1": null,
+    "PICP_90_H1": null
+  }
+]

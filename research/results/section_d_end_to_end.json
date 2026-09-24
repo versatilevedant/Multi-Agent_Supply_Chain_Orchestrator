@@ -1,0 +1,18 @@
+[
+  {
+    "Comparison": "Orchestrator vs. Manual Coordination",
+    "Decision_Time_Reduction_Pct": 99.9,
+    "Dispatch_Speedup_Pct": 88.5,
+    "Unmet_Demand_Reduction_Pct": 64.2,
+    "Recovery_Speedup_Pct": 94.7,
+    "P_Value": "< 4.81e-31"
+  },
+  {
+    "Comparison": "Orchestrator vs. Centralized Optimization",
+    "Decision_Time_Reduction_Pct": -27.3,
+    "Dispatch_Speedup_Pct": 32.1,
+    "Unmet_Demand_Reduction_Pct": 22.8,
+    "Recovery_Speedup_Pct": 86.7,
+    "P_Value": "< 4.63e-07"
+  }
+]

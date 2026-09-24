@@ -214,11 +214,39 @@ document.addEventListener('DOMContentLoaded', () => {
     function initMap() {
         map = L.map('map', { zoomControl: false }).setView([22.5, 79.5], 5);
         
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO',
-            subdomains: 'abcd',
+        // Base tile layers (Watermark-free, no API key required)
+        const esriDark = L.layerGroup([
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '&copy; Esri, DeLorme, NAVTEQ',
+                maxZoom: 19,
+                maxNativeZoom: 16
+            }),
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '',
+                maxZoom: 19,
+                maxNativeZoom: 16
+            })
+        ]).addTo(map);
+
+        const osmDark = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            className: 'osm-dark-tiles',
             maxZoom: 19
-        }).addTo(map);
+        });
+
+        const osmStandard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        });
+
+        const baseMaps = {
+            "Dark Canvas (Clean)": esriDark,
+            "Dark OpenStreetMap": osmDark,
+            "Standard OSM": osmStandard
+        };
+
+        L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
+        L.control.zoom({ position: 'topright' }).addTo(map);
     }
 
     function plotMarkers() {

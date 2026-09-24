@@ -1,0 +1,101 @@
+[
+  {
+    "Method": "Manual Coordination",
+    "Disruption_Tier": "Normal",
+    "Provenance": "[Meas]",
+    "Mean_Decision_Time_Sec": 90.14,
+    "Median_Decision_Time_Sec": 90.14,
+    "Std_Dev_Sec": 0.02,
+    "Mean_Recovery_Time_Sec": 0.0,
+    "Success_Rate_Pct": 100.0,
+    "Resource_Utilization_Pct": 83.7
+  },
+  {
+    "Method": "Manual Coordination",
+    "Disruption_Tier": "Moderate",
+    "Provenance": "[Meas]",
+    "Mean_Decision_Time_Sec": 90.15,
+    "Median_Decision_Time_Sec": 90.14,
+    "Std_Dev_Sec": 0.02,
+    "Mean_Recovery_Time_Sec": 450.0,
+    "Success_Rate_Pct": 100.0,
+    "Resource_Utilization_Pct": 80.7
+  },
+  {
+    "Method": "Manual Coordination",
+    "Disruption_Tier": "Severe",
+    "Provenance": "[Meas]",
+    "Mean_Decision_Time_Sec": 96.15,
+    "Median_Decision_Time_Sec": 90.14,
+    "Std_Dev_Sec": 22.49,
+    "Mean_Recovery_Time_Sec": 450.0,
+    "Success_Rate_Pct": 100.0,
+    "Resource_Utilization_Pct": 84.1
+  },
+  {
+    "Method": "Centralized Optimization",
+    "Disruption_Tier": "Normal",
+    "Provenance": "[Meas]",
+    "Mean_Decision_Time_Sec": 0.04,
+    "Median_Decision_Time_Sec": 0.04,
+    "Std_Dev_Sec": 0.01,
+    "Mean_Recovery_Time_Sec": 0.0,
+    "Success_Rate_Pct": 100.0,
+    "Resource_Utilization_Pct": 78.8
+  },
+  {
+    "Method": "Centralized Optimization",
+    "Disruption_Tier": "Moderate",
+    "Provenance": "[Meas]",
+    "Mean_Decision_Time_Sec": 0.04,
+    "Median_Decision_Time_Sec": 0.04,
+    "Std_Dev_Sec": 0.02,
+    "Mean_Recovery_Time_Sec": 18.0,
+    "Success_Rate_Pct": 100.0,
+    "Resource_Utilization_Pct": 87.7
+  },
+  {
+    "Method": "Centralized Optimization",
+    "Disruption_Tier": "Severe",
+    "Provenance": "[Meas]",
+    "Mean_Decision_Time_Sec": 0.05,
+    "Median_Decision_Time_Sec": 0.04,
+    "Std_Dev_Sec": 0.01,
+    "Mean_Recovery_Time_Sec": 18.0,
+    "Success_Rate_Pct": 100.0,
+    "Resource_Utilization_Pct": 83.2
+  },
+  {
+    "Method": "Multi-Agent Supply Chain Orchestrator",
+    "Disruption_Tier": "Normal",
+    "Provenance": "[Meas]",
+    "Mean_Decision_Time_Sec": 0.06,
+    "Median_Decision_Time_Sec": 0.05,
+    "Std_Dev_Sec": 0.02,
+    "Mean_Recovery_Time_Sec": 0.0,
+    "Success_Rate_Pct": 100.0,
+    "Resource_Utilization_Pct": 86.9
+  },
+  {
+    "Method": "Multi-Agent Supply Chain Orchestrator",
+    "Disruption_Tier": "Moderate",
+    "Provenance": "[Meas]",
+    "Mean_Decision_Time_Sec": 0.06,
+    "Median_Decision_Time_Sec": 0.05,
+    "Std_Dev_Sec": 0.02,
+    "Mean_Recovery_Time_Sec": 2.4,
+    "Success_Rate_Pct": 100.0,
+    "Resource_Utilization_Pct": 79.0
+  },
+  {
+    "Method": "Multi-Agent Supply Chain Orchestrator",
+    "Disruption_Tier": "Severe",
+    "Provenance": "[Meas]",
+    "Mean_Decision_Time_Sec": 0.06,
+    "Median_Decision_Time_Sec": 0.05,
+    "Std_Dev_Sec": 0.02,
+    "Mean_Recovery_Time_Sec": 2.4,
+    "Success_Rate_Pct": 100.0,
+    "Resource_Utilization_Pct": 78.9
+  }
+]

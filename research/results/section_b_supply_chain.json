@@ -1,0 +1,38 @@
+[
+  {
+    "Method": "Published IPST Benchmark (TRE 2026)",
+    "Provenance": "[Lit]",
+    "Service_Level_Pct": 94.2,
+    "Shortage_Rate_Pct": 5.8,
+    "Wastage_Pct": 2.1,
+    "Unmet_Demand": 14.2,
+    "Logistics_Cost_INR": 4200.0
+  },
+  {
+    "Method": "Manual Coordination",
+    "Provenance": "[Meas]",
+    "Service_Level_Pct": 100.0,
+    "Shortage_Rate_Pct": 0.0,
+    "Wastage_Pct": 4.5,
+    "Unmet_Demand": 0,
+    "Logistics_Cost_INR": 23364.3
+  },
+  {
+    "Method": "Centralized Optimization",
+    "Provenance": "[Meas]",
+    "Service_Level_Pct": 100.0,
+    "Shortage_Rate_Pct": 0.0,
+    "Wastage_Pct": 4.5,
+    "Unmet_Demand": 0,
+    "Logistics_Cost_INR": 23364.3
+  },
+  {
+    "Method": "Multi-Agent Supply Chain Orchestrator",
+    "Provenance": "[Meas]",
+    "Service_Level_Pct": 100.0,
+    "Shortage_Rate_Pct": 0.0,
+    "Wastage_Pct": 1.8,
+    "Unmet_Demand": 0,
+    "Logistics_Cost_INR": 43402.0
+  }
+]

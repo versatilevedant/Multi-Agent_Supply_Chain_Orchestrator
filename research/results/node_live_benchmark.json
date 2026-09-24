@@ -1,0 +1,32 @@
+{
+  "normal": {
+    "iterations": 25,
+    "successRatePct": 100,
+    "meanDecisionTimeMs": 209.96,
+    "medianDecisionTimeMs": 196.28,
+    "stdDevMs": 121.54,
+    "minTimeMs": 157.01,
+    "maxTimeMs": 795.31,
+    "fulfillmentRatePct": 100
+  },
+  "moderate": {
+    "iterations": 25,
+    "successRatePct": 100,
+    "meanDecisionTimeMs": 192.17,
+    "medianDecisionTimeMs": 196.27,
+    "stdDevMs": 26.78,
+    "minTimeMs": 156.69,
+    "maxTimeMs": 271.21,
+    "fulfillmentRatePct": 100
+  },
+  "severe": {
+    "iterations": 25,
+    "successRatePct": 100,
+    "meanDecisionTimeMs": 268.47,
+    "medianDecisionTimeMs": 215.72,
+    "stdDevMs": 104.05,
+    "minTimeMs": 156.15,
+    "maxTimeMs": 463.13,
+    "fulfillmentRatePct": 100
+  }
+}

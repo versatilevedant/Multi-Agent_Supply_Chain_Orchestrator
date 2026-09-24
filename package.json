@@ -5,6 +5,10 @@
   "main": "index.js",
 
   "scripts": {
+    "start": "node server.js",
+    "benchmark": "node benchmark_harness.js",
+    "benchmark:python": "python -m research.benchmarks.orchestration_benchmark",
+    "benchmark:forecast": "python -m research.benchmarks.evaluate_forecasting",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
