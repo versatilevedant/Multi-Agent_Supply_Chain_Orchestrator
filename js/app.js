@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeDispatchState = null;
     let ambulanceAnimationFrameId = null;
     let currentHeading = 0;
-    
+
     // Configs & Data (Fetched dynamically from Server API)
     let config = null;
     let hospitals = [];
@@ -213,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Leaflet Map Setup ──
     function initMap() {
         map = L.map('map', { zoomControl: false }).setView([22.5, 79.5], 5);
-        
+
         // Base tile layers (Watermark-free, no API key required)
         const esriDark = L.layerGroup([
             L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
@@ -286,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function populateForm() {
         if (!elements.hospitalSelect) return;
         elements.hospitalSelect.innerHTML = '';
-        
+
         hospitals.forEach(h => {
             const option = document.createElement('option');
             option.value = h.id;
@@ -306,6 +306,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── ACCEPTANCE SIMULATION & ROUTING STATE ──
     let acceptanceTimers = [];        // all scheduled confirmation/stock timeouts
     let candidateSourceMarkers = [];  // highlight markers for candidate/selected blood banks
+    let acceptedHospitalMarkers = []; // markers for accepted hospitals
+    let rejectedHospitalMarkers = []; // markers for rejected hospitals
     let destHospitalMarker = null;    // highlight marker for destination hospital
     let currentSourceBank = null;
     let currentDestHospital = null;
@@ -351,9 +353,9 @@ document.addEventListener('DOMContentLoaded', () => {
         dispatchBtn.innerHTML = `CALCULATING OPTIMAL ROUTE...`;
 
         updateTimeline('received');
-        addAgentLog({ 
-            agent: 'RequestAgent', 
-            message: `Validated emergency requisition for ${units} Units of ${bloodType} at ${destHospital.name} (${destHospital.city}). Severity: ${condition.toUpperCase()}` 
+        addAgentLog({
+            agent: 'RequestAgent',
+            message: `Validated emergency requisition for ${units} Units of ${bloodType} at ${destHospital.name} (${destHospital.city}). Severity: ${condition.toUpperCase()}`
         });
 
         // STEP 2: DISCOVERY AGENT IDENTIFIES CANDIDATE BLOOD BANK SOURCES NEAR DESTINATION HOSPITAL
@@ -388,9 +390,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         updateTimeline('discovered');
-        addAgentLog({ 
-            agent: 'DiscoveryAgent', 
-            message: `Discovered ${candidateBanks.length} candidate blood banks for destination ${destHospital.name}. Querying inventory locks...` 
+        addAgentLog({
+            agent: 'DiscoveryAgent',
+            message: `Discovered ${candidateBanks.length} candidate blood banks for destination ${destHospital.name}. Querying inventory locks...`
         });
 
         // Highlight Destination Hospital on map
@@ -423,7 +425,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Draw initial route on map
         if (currentRouteLayer) map.removeLayer(currentRouteLayer);
         currentRouteLayer = L.polyline(routeResult.latlngs, {
-            color: '#f97316', // High-visibility emergency orange
+            color: '#f9ad16ff', // High-visibility emergency orange
             weight: 5,
             opacity: 0.95,
             dashArray: '12, 8',
@@ -471,6 +473,86 @@ document.addEventListener('DOMContentLoaded', () => {
         updateTimeline('dispatched');
         animateAmbulanceDispatch(routeResult.latlngs, units, false);
 
+        // STEP 5: BROADCAST BLOOD REQUISITION TO CANDIDATE HOSPITALS IN REGION
+        const candidateHospitals = hospitals
+            .filter(h => h.id !== destHospital.id)
+            .map(h => ({
+                ...h,
+                distFromSource: routeOptimizer.haversineDistance(currentSourceBank.lat, currentSourceBank.lng, h.lat, h.lng)
+            }))
+            .filter(h => h.distFromSource < 50)
+            .sort((a, b) => a.distFromSource - b.distFromSource);
+
+        addAgentLog({
+            agent: 'CoordinationAgent',
+            message: `Broadcasting blood request to ${candidateHospitals.length} hospitals in network. Awaiting acceptance confirmations...`
+        });
+
+        // Simulate responses from candidate hospitals (nearby hospitals respond in 4-12 seconds)
+        const hospitalResponses = candidateHospitals.slice(0, 10).map((h, idx) => {
+            const responseDelay = 3.5 + idx * 2.2 + Math.random() * 1.5;
+            const willAccept = idx === 0 ? true : (Math.random() < 0.45);
+            return {
+                hospital: h,
+                responseDelay,
+                willAccept,
+                responded: false
+            };
+        });
+        hospitalResponses.sort((a, b) => a.responseDelay - b.responseDelay);
+
+        hospitalResponses.forEach(resp => {
+            const timer = setTimeout(async () => {
+                if (!simulationActive || !activeDispatchState) return;
+                resp.responded = true;
+
+                if (resp.willAccept) {
+                    addAgentLog({
+                        agent: 'RequestAgent',
+                        message: `${resp.hospital.name} ACCEPTED emergency blood requisition!`
+                    });
+
+                    // Evaluate from the ambulance's current real-time position
+                    const curPos = activeDispatchState.currentPosition || { lat: currentSourceBank.lat, lng: currentSourceBank.lng };
+
+                    // Compute route from current ambulance position to this accepted hospital
+                    const candidateRoute = await computeRoute(curPos, { lat: resp.hospital.lat, lng: resp.hospital.lng });
+                    if (!candidateRoute.valid) return;
+
+                    // Remaining distance to current destination from current ambulance position
+                    const currentDestRoute = await computeRoute(curPos, { lat: activeDispatchState.destHospital.lat, lng: activeDispatchState.destHospital.lng });
+                    const currentDistKm = currentDestRoute.valid ? parseFloat(currentDestRoute.distKm) : parseFloat(activeDispatchState.distKm);
+                    const candidateDistKm = parseFloat(candidateRoute.distKm);
+
+                    // Check if this newly accepted hospital has a SHORTER distance than current destination
+                    if (candidateDistKm < currentDistKm) {
+                        await performHospitalReroute(resp.hospital, candidateRoute, currentDistKm);
+                    } else {
+                        addAgentLog({
+                            agent: 'IntelligenceAgent',
+                            message: `${resp.hospital.name} accepted, but current destination (${activeDispatchState.destHospital.name}) is closer (${currentDistKm.toFixed(2)} km vs ${candidateDistKm.toFixed(2)} km). No reroute.`
+                        });
+
+                        const acceptMarker = L.circleMarker([resp.hospital.lat, resp.hospital.lng], {
+                            radius: 10, color: '#10b981', fillColor: '#10b981', fillOpacity: 0.25, weight: 1.5
+                        }).addTo(map);
+                        acceptedHospitalMarkers.push(acceptMarker);
+                    }
+                } else {
+                    addAgentLog({
+                        agent: 'RequestAgent',
+                        message: `${resp.hospital.name} declined request.`
+                    });
+
+                    const rejectMarker = L.circleMarker([resp.hospital.lat, resp.hospital.lng], {
+                        radius: 8, color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.1, weight: 1, dashArray: '4, 4'
+                    }).addTo(map);
+                    rejectedHospitalMarkers.push(rejectMarker);
+                }
+            }, resp.responseDelay * 1000);
+            acceptanceTimers.push(timer);
+        });
+
         // Finalize button after short delay
         setTimeout(() => {
             dispatchBtn.disabled = false;
@@ -490,42 +572,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ── SOURCE REROUTING LOGIC (Preserving Destination Hospital) ──
-    async function performSourceReroute(newBank, reason = 'Mid-Transit Interception') {
+    // ── REROUTE TO SHORTEST DISTANCE ACCEPTED HOSPITAL ──
+    async function performHospitalReroute(newHospital, route, prevDistKm = null) {
         if (!simulationActive || !activeDispatchState) return;
 
-        const destHospital = activeDispatchState.destHospital;
-        const prevBank = activeDispatchState.sourceBank;
-        if (newBank.id === prevBank.id && activeDispatchState.candidateBanks.length > 1) {
-            const other = activeDispatchState.candidateBanks.find(b => b.id !== prevBank.id);
-            if (other) newBank = other;
-        }
-
-        currentSourceBank = newBank;
-        activeDispatchState.sourceBank = newBank;
+        const prevHospName = activeDispatchState.destHospital ? activeDispatchState.destHospital.name : 'Hospital';
+        activeDispatchState.destHospital = newHospital;
+        currentDestHospital = newHospital;
         activeDispatchState.isRerouted = true;
 
-        const startPoint = activeDispatchState.currentPosition || { lat: newBank.lat, lng: newBank.lng };
-
-        addAgentLog({ 
-            agent: 'CoordinationAgent', 
-            message: `${reason}: Source rerouted from ${prevBank.name} to ${newBank.name}. Destination preserved: ${destHospital.name}!` 
+        const prevDistStr = prevDistKm ? ` (${prevDistKm.toFixed(2)} km)` : '';
+        addAgentLog({
+            agent: 'CoordinationAgent',
+            message: `Rerouting to ${newHospital.name} (Shortest distance: ${route.distKm} km, ETA: ${route.durationMin} min) — closer than ${prevHospName}${prevDistStr}!`
         });
 
-        // Compute route from new source blood bank to DESTINATION HOSPITAL (e.g. KEM Hospital)
-        const newRoute = await computeRoute({ lat: newBank.lat, lng: newBank.lng }, { lat: destHospital.lat, lng: destHospital.lng });
-        if (!newRoute.valid) return;
+        // Highlight newly accepted destination hospital on map
+        if (destHospitalMarker) map.removeLayer(destHospitalMarker);
+        destHospitalMarker = L.circleMarker([newHospital.lat, newHospital.lng], {
+            radius: 14, color: '#38bdf8', fillColor: '#38bdf8', fillOpacity: 0.35, weight: 3
+        }).bindTooltip(`<b>Destination: ${newHospital.name}</b>`, { permanent: true, direction: 'top', className: 'dest-tooltip' }).addTo(map);
 
-        // Highlight rerouted source bank on map with amber ring
-        const rerouteMarker = L.circleMarker([newBank.lat, newBank.lng], {
-            radius: 12, color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.35, weight: 2
-        }).addTo(map);
-        candidateSourceMarkers.push(rerouteMarker);
-
-        // Update route on map in amber color
+        // Update route on map in high-visibility emergency orange directly from current vehicle position
         if (currentRouteLayer) map.removeLayer(currentRouteLayer);
-        currentRouteLayer = L.polyline(newRoute.latlngs, {
-            color: '#f97316', // High-visibility emergency orange
+        currentRouteLayer = L.polyline(route.latlngs, {
+            color: '#f9ad16ff',
             weight: 5,
             opacity: 0.95,
             dashArray: '10, 6',
@@ -536,21 +607,29 @@ document.addEventListener('DOMContentLoaded', () => {
         map.fitBounds(currentRouteLayer.getBounds(), { padding: [60, 60], animate: true, duration: 1.0 });
 
         // Update active dispatch state
-        activeDispatchState.waypoints = newRoute.latlngs;
-        activeDispatchState.distKm = newRoute.distKm;
-        activeDispatchState.durationMin = newRoute.durationMin;
+        activeDispatchState.waypoints = route.latlngs;
+        activeDispatchState.distKm = route.distKm;
+        activeDispatchState.durationMin = route.durationMin;
 
-        // Update UI card: Hospital stays DESTINATION (e.g. KEM Hospital), Source Bank shows (REROUTED)
-        renderRouteInfoCard(destHospital, newBank, activeDispatchState.units, activeDispatchState.bloodType, newRoute.distKm, newRoute.durationMin, newRoute.algo, true);
+        // Update UI card: Hospital shows the rerouted shortest-distance accepted hospital
+        elements.routeInfoBody.innerHTML = `
+            <div style="font-size:0.8rem; line-height:1.6; color:#e2e8f0;">
+                <div><b>Hospital:</b> <span style="color:#34d399; font-weight:600;">${newHospital.name}</span> <span style="color:#fbbf24; font-weight:bold;">(REROUTED)</span></div>
+                <div><b>Source Bank:</b> <span style="color:#38bdf8; font-weight:600;">${currentSourceBank.name}</span></div>
+                <div><b>Allocation:</b> ${activeDispatchState.units} Units ${activeDispatchState.bloodType}</div>
+                <div><b>Distance:</b> ${route.distKm} km | <b>ETA:</b> ${route.durationMin} min</div>
+                <div><b>Engine:</b> ${route.algo}</div>
+            </div>
+        `;
 
         elements.routeResultBadge.style.display = 'block';
         elements.routeResultBadge.classList.add('visible');
-        elements.routeResultBadge.innerHTML = `<b>Rerouted:</b> <b>${newRoute.distKm} km</b> | ETA: <b>${newRoute.durationMin} mins</b>`;
-        elements.timelineTitle.textContent = `Mission: ${destHospital.name}`;
-        elements.timelineEta.textContent = `ETA: ${newRoute.durationMin} mins`;
+        elements.routeResultBadge.innerHTML = `<b>Rerouted:</b> <b>${route.distKm} km</b> | ETA: <b>${route.durationMin} mins</b>`;
+        elements.timelineTitle.textContent = `Mission: ${newHospital.name}`;
+        elements.timelineEta.textContent = `ETA: ${route.durationMin} mins`;
 
-        // Re-animate ambulance along the new route to destination hospital
-        animateAmbulanceDispatch(newRoute.latlngs, activeDispatchState.units, false);
+        // Smoothly animate ambulance along the new orange route to the accepted hospital
+        animateAmbulanceDispatch(route.latlngs, activeDispatchState.units, false);
     }
 
     // ── Mid-Transit Re-route Trigger Handler (from UI Button) ──
@@ -560,14 +639,22 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const currentBankId = activeDispatchState.sourceBank.id;
-        let alternativeBank = activeDispatchState.candidateBanks.find(b => b.id !== currentBankId);
+        const curPos = activeDispatchState.currentPosition || { lat: currentSourceBank.lat, lng: currentSourceBank.lng };
+        const candidateHospitals = hospitals
+            .filter(h => h.id !== activeDispatchState.destHospital.id)
+            .map(h => ({
+                ...h,
+                distFromAmbulance: routeOptimizer.haversineDistance(curPos.lat, curPos.lng, h.lat, h.lng)
+            }))
+            .sort((a, b) => a.distFromAmbulance - b.distFromAmbulance);
 
-        if (!alternativeBank) {
-            alternativeBank = bloodBanks.find(b => b.id !== currentBankId) || activeDispatchState.sourceBank;
-        }
+        const shortestHospital = candidateHospitals[0];
+        if (!shortestHospital) return;
 
-        await performSourceReroute(alternativeBank, 'Manual Mid-Transit Interception');
+        const candidateRoute = await computeRoute(curPos, { lat: shortestHospital.lat, lng: shortestHospital.lng });
+        if (!candidateRoute.valid) return;
+
+        await performHospitalReroute(shortestHospital, candidateRoute);
     }
 
     // ── Helper: Compute route from source to destination ──
@@ -627,6 +714,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Remove source and destination markers
         candidateSourceMarkers.forEach(m => map.removeLayer(m));
         candidateSourceMarkers = [];
+        acceptedHospitalMarkers.forEach(m => map.removeLayer(m));
+        acceptedHospitalMarkers = [];
+        rejectedHospitalMarkers.forEach(m => map.removeLayer(m));
+        rejectedHospitalMarkers = [];
         if (destHospitalMarker) {
             map.removeLayer(destHospitalMarker);
             destHospitalMarker = null;
@@ -688,7 +779,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const dLng = toRad(lng2 - lng1);
         const y = Math.sin(dLng) * Math.cos(toRad(lat2));
         const x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
-                  Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(dLng);
+            Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(dLng);
         return (toDeg(Math.atan2(y, x)) + 360) % 360;
     }
 
@@ -777,13 +868,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 icon: createAmbulanceIcon(currentHeading),
                 zIndexOffset: 1000
             })
-            .bindTooltip(`Express Ambulance (Units: ${units})`, {
-                permanent: true,
-                direction: 'top',
-                offset: [0, -30],
-                className: 'ambulance-tooltip'
-            })
-            .addTo(map);
+                .bindTooltip(`Express Ambulance (Units: ${units})`, {
+                    permanent: true,
+                    direction: 'top',
+                    offset: [0, -30],
+                    className: 'ambulance-tooltip'
+                })
+                .addTo(map);
             vehicleMarkers.set('main_vehicle', vehicleMarker);
         } else {
             vehicleMarker.setLatLng(waypoints[0]);
@@ -866,9 +957,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (elements.rerouteBtn) {
                     elements.rerouteBtn.style.display = 'none';
                 }
-                addAgentLog({ 
-                    agent: 'LogisticsAgent', 
-                    message: `Delivery complete! ${units} units safely handed over to ${destName}. Mission accomplished.` 
+                addAgentLog({
+                    agent: 'LogisticsAgent',
+                    message: `Delivery complete! ${units} units safely handed over to ${destName}. Mission accomplished.`
                 });
                 simulationActive = false;
             }
@@ -904,7 +995,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function connectSSE() {
         try {
             const evtSource = new EventSource('/api/stream');
-            
+
             evtSource.addEventListener('agent_log', (e) => {
                 const data = JSON.parse(e.data);
                 addAgentLog(data);
@@ -922,7 +1013,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function addAgentLog(logData) {
         if (!elements.agentLogFeed) return;
-        
+
         const colors = {
             RequestAgent: '#8b5cf6',
             DiscoveryAgent: '#14b8a6',
@@ -933,15 +1024,15 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const color = colors[logData.agent] || '#60a5fa';
-        
+
         const el = document.createElement('div');
         el.className = 'feed-item';
         el.innerHTML = `
-            <span class="time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</span>
+            <span class="time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
             <span class="agent" style="color: ${color}; font-weight: bold;">[${logData.agent}]</span>
             <span class="msg">${formatLogMessage(logData)}</span>
         `;
-        
+
         elements.agentLogFeed.prepend(el);
         if (elements.agentLogFeed.children.length > 30) {
             elements.agentLogFeed.removeChild(elements.agentLogFeed.lastChild);
