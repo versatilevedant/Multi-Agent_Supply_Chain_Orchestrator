@@ -423,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Draw initial route on map
         if (currentRouteLayer) map.removeLayer(currentRouteLayer);
         currentRouteLayer = L.polyline(routeResult.latlngs, {
-            color: '#8b5cf6',
+            color: '#f97316', // High-visibility emergency orange
             weight: 5,
             opacity: 0.95,
             dashArray: '12, 8',
@@ -467,26 +467,9 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.rerouteBtn.style.display = 'block';
         }
 
-        // Start ambulance dispatch animation
+        // Start ambulance dispatch animation along computed road route
         updateTimeline('dispatched');
         animateAmbulanceDispatch(routeResult.latlngs, units, false);
-
-        // STEP 5: SCHEDULE DYNAMIC SOURCE REROUTE (Simulating closer candidate bank confirmation)
-        if (candidateBanks.length > 1) {
-            const altBank = candidateBanks[1];
-            const timer = setTimeout(async () => {
-                if (!simulationActive || !activeDispatchState) return;
-
-                addAgentLog({ 
-                    agent: 'IntelligenceAgent', 
-                    message: `Dynamic telemetry update: Alternate blood bank ${altBank.name} confirmed faster priority dispatch clearance.` 
-                });
-
-                // Automatically reroute source to altBank while preserving destination hospital
-                await performSourceReroute(altBank, 'Dynamic Network Interception');
-            }, 6000);
-            acceptanceTimers.push(timer);
-        }
 
         // Finalize button after short delay
         setTimeout(() => {
@@ -542,7 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update route on map in amber color
         if (currentRouteLayer) map.removeLayer(currentRouteLayer);
         currentRouteLayer = L.polyline(newRoute.latlngs, {
-            color: '#f59e0b',
+            color: '#f97316', // High-visibility emergency orange
             weight: 5,
             opacity: 0.95,
             dashArray: '10, 6',
@@ -567,7 +550,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.timelineEta.textContent = `ETA: ${newRoute.durationMin} mins`;
 
         // Re-animate ambulance along the new route to destination hospital
-        animateAmbulanceDispatch(newRoute.latlngs, activeDispatchState.units, true);
+        animateAmbulanceDispatch(newRoute.latlngs, activeDispatchState.units, false);
     }
 
     // ── Mid-Transit Re-route Trigger Handler (from UI Button) ──
@@ -803,34 +786,13 @@ document.addEventListener('DOMContentLoaded', () => {
             .addTo(map);
             vehicleMarkers.set('main_vehicle', vehicleMarker);
         } else {
+            vehicleMarker.setLatLng(waypoints[0]);
             vehicleMarker.setIcon(createAmbulanceIcon(currentHeading));
         }
 
         // ── Smooth frame-rate-independent animation using requestAnimationFrame ──
-        const ANIMATION_DURATION_MS = 30000; // Total animation time in ms (30s for visible movement)
+        const ANIMATION_DURATION_MS = 25000; // 25s for smooth, realistic movement
         let animationWaypoints = waypoints;
-        let startSegmentOffset = 0; // fraction of route already covered (for reroute)
-
-        // If rerouting mid-transit, start from the ambulance's current position
-        if (isReroute && activeDispatchState && activeDispatchState.currentPosition) {
-            const curPos = activeDispatchState.currentPosition;
-            // Find the nearest waypoint on the new route to the current position
-            let nearestIdx = 0;
-            let nearestDist = Infinity;
-            for (let i = 0; i < waypoints.length; i++) {
-                const d = Math.pow(waypoints[i][0] - curPos.lat, 2) + Math.pow(waypoints[i][1] - curPos.lng, 2);
-                if (d < nearestDist) {
-                    nearestDist = d;
-                    nearestIdx = i;
-                }
-            }
-            // Slice waypoints from nearest point onward so ambulance continues from current position
-            if (nearestIdx > 0) {
-                animationWaypoints = [[curPos.lat, curPos.lng], ...waypoints.slice(nearestIdx)];
-            } else {
-                animationWaypoints = [[curPos.lat, curPos.lng], ...waypoints.slice(1)];
-            }
-        }
 
         const totalSegments = animationWaypoints.length - 1;
         if (totalSegments <= 0) return;
